@@ -11,6 +11,7 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   Dimensions,
+  Platform,
 } from 'react-native';
 import { LogOut, ShoppingBag, CreditCard, Shield, Sparkles } from 'lucide-react-native';
 import { COLORS } from './constants/theme';

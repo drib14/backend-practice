@@ -176,6 +176,9 @@ const styles = StyleSheet.create({
   header: {
     alignItems: 'center',
     marginBottom: 24,
+    width: '100%',
+    maxWidth: 440,
+    alignSelf: 'center',
   },
   logoIconFrame: {
     width: 100,
@@ -228,6 +231,9 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.05,
     shadowRadius: 20,
     elevation: 4,
+    width: '100%',
+    maxWidth: 440,
+    alignSelf: 'center',
   },
   cardHeader: {
     color: COLORS.text,
