@@ -63,6 +63,13 @@ const PREMIUM_PRODUCTS = [
   },
 ];
 
+const getInitials = (name) => {
+  if (!name) return 'KS';
+  const parts = name.trim().split(/\s+/);
+  if (parts.length === 1) return parts[0].substring(0, 2).toUpperCase();
+  return (parts[0].charAt(0) + parts[parts.length - 1].charAt(0)).toUpperCase();
+};
+
 export default function App() {
   const [showSplash, setShowSplash] = useState(true);
   const [currentScreen, setCurrentScreen] = useState('Login');
@@ -466,8 +473,12 @@ export default function App() {
       <ScrollView contentContainerStyle={styles.profileScroll} showsVerticalScrollIndicator={false}>
         {/* Profile Card details */}
         <View style={styles.profileHeaderCard}>
-          <Image source={require('./assets/icon.png')} style={styles.profilePhoto} />
-          <Text style={styles.profileName}>{currentUser?.name || 'Guest'}</Text>
+        <View style={styles.profileInitialsContainer}>
+          <Text style={styles.profileInitialsText}>
+            {getInitials(currentUser?.name)}
+          </Text>
+        </View>
+        <Text style={styles.profileName}>{currentUser?.name || 'Guest'}</Text>
           <Text style={styles.profileEmail}>{currentUser?.email || 'guest@keyshien.com'}</Text>
         </View>
 
@@ -1179,6 +1190,27 @@ const styles = StyleSheet.create({
     borderColor: '#FFFFFF',
     backgroundColor: '#FFFFFF',
     marginBottom: 12,
+  },
+  profileInitialsContainer: {
+    width: 90,
+    height: 90,
+    borderRadius: 45,
+    borderWidth: 3,
+    borderColor: '#FFFFFF',
+    backgroundColor: COLORS.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 12,
+    shadowColor: '#4C0519',
+    shadowOpacity: 0.15,
+    shadowRadius: 10,
+    elevation: 3,
+  },
+  profileInitialsText: {
+    color: '#FFFFFF',
+    fontSize: 32,
+    fontWeight: '800',
+    letterSpacing: 1,
   },
   profileName: {
     color: COLORS.text,
