@@ -1,31 +1,36 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Prodify // Premium Product Inventory Dashboard</title>
-  <meta name="description" content="Manage your product inventory with Prodify's state-of-the-art CRUD control panel. High-performance, modern dark glassmorphism dashboard.">
-  
+  <meta name="description"
+    content="Manage your product inventory with Prodify's state-of-the-art CRUD control panel. High-performance, modern dark glassmorphism dashboard.">
+
   <!-- Premium Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap"
+    rel="stylesheet">
+
   <!-- FontAwesome Icons -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  
+
   <!-- Custom Styling -->
   <link rel="stylesheet" href="style.css">
 </head>
+
 <body>
-  
+
   <!-- Background Glows -->
   <div class="glow-bg glow-primary"></div>
   <div class="glow-bg glow-secondary"></div>
 
   <!-- App Shell -->
   <div class="app-container">
-    
+
     <!-- Top Navigation Bar -->
     <header class="header">
       <div class="logo">
@@ -40,10 +45,10 @@
 
     <!-- Main Content Grid -->
     <main class="main-content">
-      
+
       <!-- Stats Dashboard -->
       <section class="stats-grid">
-        
+
         <!-- Total Products Card -->
         <div class="stat-card" id="stat-total-products">
           <div class="stat-icon icon-cyan"><i class="fa-solid fa-boxes-stacked"></i></div>
@@ -85,9 +90,10 @@
       <section class="controls-panel">
         <div class="search-box-wrapper">
           <i class="fa-solid fa-magnifying-glass search-icon"></i>
-          <input type="text" id="search-input" placeholder="Search products by name or description..." autocomplete="off">
+          <input type="text" id="search-input" placeholder="Search products by name or description..."
+            autocomplete="off">
         </div>
-        
+
         <div class="filters-wrapper">
           <select id="filter-category">
             <option value="">All Categories</option>
@@ -159,10 +165,10 @@
         <h2 id="modal-title"><i class="fa-solid fa-cube"></i> Add Product</h2>
         <button id="modal-close" class="btn-close"><i class="fa-solid fa-xmark"></i></button>
       </div>
-      
+
       <form id="product-form" novalidate>
         <input type="hidden" id="product-id">
-        
+
         <div class="form-group">
           <label for="input-name">Product Name <span class="required">*</span></label>
           <input type="text" id="input-name" required placeholder="e.g., Apex Pro Keyboard" minlength="2">
@@ -199,7 +205,8 @@
 
         <div class="form-group">
           <label for="input-description">Description</label>
-          <textarea id="input-description" rows="3" placeholder="Enter brief product features, dimensions, or details..."></textarea>
+          <textarea id="input-description" rows="3"
+            placeholder="Enter brief product features, dimensions, or details..."></textarea>
           <span class="field-error" id="error-description"></span>
         </div>
 
@@ -223,4 +230,5 @@
   <!-- Scripts -->
   <script src="app.js"></script>
 </body>
+
 </html>

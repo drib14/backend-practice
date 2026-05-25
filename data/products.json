@@ -43,14 +43,5 @@
     "stock": 25,
     "category": "Office",
     "createdAt": "2026-05-24T16:30:10.000Z"
-  },
-  {
-    "id": "mpl96ievu0zn0",
-    "name": "Mechanical Keyboard Switch Puller",
-    "description": "Premium anodized aluminum switch puller for hot-swappable mechanical keyboards.",
-    "price": 9.99,
-    "stock": 150,
-    "category": "Peripherals",
-    "createdAt": "2026-05-25T13:39:38.551Z"
   }
 ]
