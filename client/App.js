@@ -9,6 +9,7 @@ import {
   FlatList,
   Image,
   TouchableOpacity,
+  Platform,
 } from 'react-native';
 import { LogOut, User, ShoppingBag, CreditCard, Shield } from 'lucide-react-native';
 import { COLORS } from './constants/theme';
