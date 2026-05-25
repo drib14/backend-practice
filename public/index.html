@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Prodify // Premium Product Inventory Dashboard</title>
+  <meta name="description" content="Manage your product inventory with Prodify's state-of-the-art CRUD control panel. High-performance, modern dark glassmorphism dashboard.">
+  
+  <!-- Premium Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  
+  <!-- Custom Styling -->
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  
+  <!-- Background Glows -->
+  <div class="glow-bg glow-primary"></div>
+  <div class="glow-bg glow-secondary"></div>
+
+  <!-- App Shell -->
+  <div class="app-container">
+    
+    <!-- Top Navigation Bar -->
+    <header class="header">
+      <div class="logo">
+        <div class="logo-icon"><i class="fa-solid fa-cube"></i></div>
+        <span class="logo-text">PRODIFY<span class="logo-tag">//</span><span class="logo-sub">INVENTORY</span></span>
+      </div>
+      <div class="status-indicator">
+        <span class="pulse-dot"></span>
+        <span class="status-text" id="api-status">API: Connected</span>
+      </div>
+    </header>
+
+    <!-- Main Content Grid -->
+    <main class="main-content">
+      
+      <!-- Stats Dashboard -->
+      <section class="stats-grid">
+        
+        <!-- Total Products Card -->
+        <div class="stat-card" id="stat-total-products">
+          <div class="stat-icon icon-cyan"><i class="fa-solid fa-boxes-stacked"></i></div>
+          <div class="stat-details">
+            <h3 class="stat-label">Total Items</h3>
+            <p class="stat-value" id="val-total-products">0</p>
+          </div>
+        </div>
+
+        <!-- Total Value Card -->
+        <div class="stat-card" id="stat-total-value">
+          <div class="stat-icon icon-violet"><i class="fa-solid fa-wallet"></i></div>
+          <div class="stat-details">
+            <h3 class="stat-label">Inventory Value</h3>
+            <p class="stat-value" id="val-total-value">$0.00</p>
+          </div>
+        </div>
+
+        <!-- Average Price Card -->
+        <div class="stat-card" id="stat-avg-price">
+          <div class="stat-icon icon-pink"><i class="fa-solid fa-tags"></i></div>
+          <div class="stat-details">
+            <h3 class="stat-label">Average Price</h3>
+            <p class="stat-value" id="val-avg-price">$0.00</p>
+          </div>
+        </div>
+
+        <!-- Low Stock Alerts Card -->
+        <div class="stat-card" id="stat-low-stock">
+          <div class="stat-icon icon-amber"><i class="fa-solid fa-triangle-exclamation"></i></div>
+          <div class="stat-details">
+            <h3 class="stat-label">Low Stock Alerts</h3>
+            <p class="stat-value" id="val-low-stock">0</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Interactive Controls Panel -->
+      <section class="controls-panel">
+        <div class="search-box-wrapper">
+          <i class="fa-solid fa-magnifying-glass search-icon"></i>
+          <input type="text" id="search-input" placeholder="Search products by name or description..." autocomplete="off">
+        </div>
+        
+        <div class="filters-wrapper">
+          <select id="filter-category">
+            <option value="">All Categories</option>
+            <option value="Peripherals">Peripherals</option>
+            <option value="Audio">Audio</option>
+            <option value="Display">Display</option>
+            <option value="Office">Office</option>
+          </select>
+
+          <select id="sort-by">
+            <option value="newest">Newest Added</option>
+            <option value="price_asc">Price: Low to High</option>
+            <option value="price_desc">Price: High to Low</option>
+            <option value="stock">Stock Level: Low to High</option>
+          </select>
+
+          <button id="btn-add-product" class="btn btn-primary">
+            <i class="fa-solid fa-plus"></i> Add Product
+          </button>
+        </div>
+      </section>
+
+      <!-- Inventory Table Panel -->
+      <section class="table-panel">
+        <div class="table-container">
+          <table id="inventory-table">
+            <thead>
+              <tr>
+                <th>Product Info</th>
+                <th>Category</th>
+                <th class="text-right">Price</th>
+                <th class="text-center">Stock</th>
+                <th class="text-center">Status</th>
+                <th class="text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="inventory-tbody">
+              <!-- Rendered Dynamically via JS -->
+              <tr>
+                <td colspan="6" class="table-loading">
+                  <div class="spinner"></div>
+                  <span>Fetching catalog...</span>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Empty State View -->
+        <div id="empty-state" class="empty-state hidden">
+          <div class="empty-icon"><i class="fa-solid fa-box-open"></i></div>
+          <h3>No products found</h3>
+          <p>Try refining your search or add a new product to populate the catalog.</p>
+          <button id="btn-reset-filters" class="btn btn-secondary">Clear Filters</button>
+        </div>
+      </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+      <p>&copy; 2026 Prodify Inc. All rights reserved. Powered by Node.js, Express & Vanilla CSS.</p>
+    </footer>
+  </div>
+
+  <!-- Slide-In Overlay Modal for Add/Edit -->
+  <div id="product-modal" class="modal-overlay hidden">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h2 id="modal-title"><i class="fa-solid fa-cube"></i> Add Product</h2>
+        <button id="modal-close" class="btn-close"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      
+      <form id="product-form" novalidate>
+        <input type="hidden" id="product-id">
+        
+        <div class="form-group">
+          <label for="input-name">Product Name <span class="required">*</span></label>
+          <input type="text" id="input-name" required placeholder="e.g., Apex Pro Keyboard" minlength="2">
+          <span class="field-error" id="error-name"></span>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="input-category">Category <span class="required">*</span></label>
+            <input type="text" id="input-category" required placeholder="e.g., Peripherals" list="category-suggestions">
+            <datalist id="category-suggestions">
+              <option value="Peripherals">
+              <option value="Audio">
+              <option value="Display">
+              <option value="Office">
+            </datalist>
+            <span class="field-error" id="error-category"></span>
+          </div>
+
+          <div class="form-group">
+            <label for="input-price">Price ($) <span class="required">*</span></label>
+            <input type="number" id="input-price" required step="0.01" min="0.01" placeholder="99.99">
+            <span class="field-error" id="error-price"></span>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="input-stock">Stock Level <span class="required">*</span></label>
+            <input type="number" id="input-stock" required min="0" step="1" placeholder="10">
+            <span class="field-error" id="error-stock"></span>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="input-description">Description</label>
+          <textarea id="input-description" rows="3" placeholder="Enter brief product features, dimensions, or details..."></textarea>
+          <span class="field-error" id="error-description"></span>
+        </div>
+
+        <!-- Display-only Validation Summary -->
+        <div id="modal-error-summary" class="error-summary hidden">
+          <i class="fa-solid fa-triangle-exclamation"></i>
+          <span id="summary-error-text">Please correct the highlighted fields.</span>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" id="btn-modal-cancel" class="btn btn-secondary">Cancel</button>
+          <button type="submit" id="btn-modal-submit" class="btn btn-primary">Save Product</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Toast Notification Stack -->
+  <div id="toast-container" class="toast-container"></div>
+
+  <!-- Scripts -->
+  <script src="app.js"></script>
+</body>
+</html>
