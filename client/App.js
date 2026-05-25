@@ -15,6 +15,7 @@ import {
   ScrollView,
   Modal,
   Platform,
+  useWindowDimensions,
 } from 'react-native';
 import { LogOut, ShoppingBag, CreditCard, Shield, Sparkles, ShoppingCart, User, Trash2, CheckCircle, ArrowRight } from 'lucide-react-native';
 import { COLORS } from './constants/theme';
@@ -71,6 +72,8 @@ const getInitials = (name) => {
 };
 
 export default function App() {
+  const { width: windowWidth, height: windowHeight } = useWindowDimensions();
+
   const [showSplash, setShowSplash] = useState(true);
   const [currentScreen, setCurrentScreen] = useState('Login');
   const [routeParams, setRouteParams] = useState(null);
@@ -81,6 +84,10 @@ export default function App() {
   // Authenticated State
   const [token, setToken] = useState(null);
   const [currentUser, setCurrentUser] = useState(null);
+  
+  // E-Commerce Store Products & User Orders State
+  const [products, setProducts] = useState(PREMIUM_PRODUCTS);
+  const [orders, setOrders] = useState([]);
   
   // E-Commerce Cart State
   const [cart, setCart] = useState([]);
@@ -102,8 +109,44 @@ export default function App() {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [profileLoading, setProfileLoading] = useState(false);
 
-  // Splash Screen Timeout
+  const fetchProducts = async () => {
+    try {
+      const baseUrl = API_URL.replace('/api/auth', '/api/products');
+      const response = await fetch(baseUrl);
+      const data = await response.json();
+      if (data.status === 'success' && data.products && data.products.length > 0) {
+        setProducts(data.products);
+      }
+    } catch (err) {
+      console.warn('Failed to fetch dynamic products from MongoDB, utilizing offline catalog fallback:', err.message);
+    }
+  };
+
+  const fetchOrders = async (authToken) => {
+    const activeToken = authToken || token;
+    if (!activeToken) return;
+
+    try {
+      const baseUrl = API_URL.replace('/api/auth', '/api/orders');
+      const response = await fetch(baseUrl, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${activeToken}`,
+        },
+      });
+      const data = await response.json();
+      if (data.status === 'success' && data.orders) {
+        setOrders(data.orders);
+      }
+    } catch (err) {
+      console.warn('Failed to retrieve e-commerce transaction histories:', err.message);
+    }
+  };
+
+  // Splash Screen Timeout and Seed Seeding on startup
   useEffect(() => {
+    fetchProducts();
     const timer = setTimeout(() => {
       setShowSplash(false);
     }, 2500);
@@ -121,6 +164,7 @@ export default function App() {
     setCurrentUser(data.user);
     setEditName(data.user.name);
     setEditEmail(data.user.email);
+    fetchOrders(data.token);
     setActiveTab('Boutique');
     navigate('MainDashboard');
   };
@@ -134,9 +178,10 @@ export default function App() {
 
   // E-Commerce Buying Methods
   const addToCart = (product) => {
-    const existing = cart.find(item => item.id === product.id);
+    const productId = product.id || product._id;
+    const existing = cart.find(item => (item.id || item._id) === productId);
     if (existing) {
-      setCart(cart.map(item => item.id === product.id ? { ...item, quantity: item.quantity + 1 } : item));
+      setCart(cart.map(item => (item.id || item._id) === productId ? { ...item, quantity: item.quantity + 1 } : item));
     } else {
       setCart([...cart, { ...product, quantity: 1 }]);
     }
@@ -145,7 +190,8 @@ export default function App() {
 
   const updateCartQuantity = (id, delta) => {
     const updated = cart.map(item => {
-      if (item.id === id) {
+      const itemId = item.id || item._id;
+      if (itemId === id) {
         const newQty = item.quantity + delta;
         return newQty > 0 ? { ...item, quantity: newQty } : null;
       }
@@ -170,26 +216,68 @@ export default function App() {
     setCheckoutVisible(true);
   };
 
-  const handlePayMongoSubmit = () => {
+  const handlePayMongoSubmit = async () => {
     if (!cardName || !cardNumber || !cardExpiry || !cardCvv) {
       Alert.alert('Missing Details', 'Please fill out all PayMongo card details to secure authorization.');
       return;
     }
 
     setPayLoading(true);
-    // Simulate PayMongo card authorization latency
-    setTimeout(() => {
-      const orderNum = `KS-${Math.floor(100000 + Math.random() * 900000)}`;
-      setLastOrderDetails({
-        orderNumber: orderNum,
-        total: getCartTotal() + 5.00,
-        items: [...cart]
+    try {
+      // Structure checkout items for database
+      const orderItems = cart.map(item => ({
+        productId: item.id || item._id,
+        name: item.name,
+        price: item.price,
+        quantity: item.quantity,
+        image: item.image,
+      }));
+
+      const maskedNumber = `${cardNumber.substring(0, 4)}********${cardNumber.substring(12, 16) || '3333'}`;
+      const totalAmount = getCartTotal() + 5.00;
+
+      const orderBody = {
+        items: orderItems,
+        total: totalAmount,
+        shippingFee: 5.00,
+        paymentDetails: {
+          cardholderName: cardName,
+          cardNumberMasked: maskedNumber,
+        },
+      };
+
+      const baseUrl = API_URL.replace('/api/auth', '/api/orders');
+      const response = await fetch(baseUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(orderBody),
       });
+
+      const data = await response.json();
+
+      if (response.status === 201 && data.status === 'success') {
+        setLastOrderDetails({
+          orderNumber: data.order.orderNumber,
+          total: data.order.total,
+          items: data.order.items,
+        });
+        setCart([]); // Clear cart
+        setCheckoutVisible(false);
+        setOrderSuccessVisible(true);
+        // Refresh orders list
+        fetchOrders(token);
+      } else {
+        Alert.alert('Payment Denied', data.message || 'Authorization failed through PayMongo gateway.');
+      }
+    } catch (err) {
+      console.error('Checkout API Error:', err);
+      Alert.alert('Network Error', 'Failed to connect to e-commerce transaction server.');
+    } finally {
       setPayLoading(false);
-      setCheckoutVisible(false);
-      setCart([]); // Clear cart
-      setOrderSuccessVisible(true);
-    }, 2000);
+    }
   };
 
   // Profile Management API Methods
@@ -378,8 +466,8 @@ export default function App() {
   const renderBoutiqueTab = () => {
     return (
       <FlatList
-        data={PREMIUM_PRODUCTS}
-        keyExtractor={(item) => item.id}
+        data={products}
+        keyExtractor={(item) => item.id || item._id}
         numColumns={2}
         columnWrapperStyle={styles.productRow}
         showsVerticalScrollIndicator={false}
@@ -535,6 +623,36 @@ export default function App() {
           />
         </View>
 
+        {/* Order History list */}
+        <View style={styles.profileFormCard}>
+          <Text style={styles.formCardHeader}>YOUR ORDER HISTORY</Text>
+          {orders.length === 0 ? (
+            <Text style={styles.emptyOrdersText}>No past transactions logged in database.</Text>
+          ) : (
+            orders.map((ord) => (
+              <View key={ord._id} style={styles.orderHistoryItem}>
+                <View style={styles.orderHistoryHeader}>
+                  <Text style={styles.orderHistoryNum}>{ord.orderNumber}</Text>
+                  <Text style={styles.orderHistoryDate}>
+                    {new Date(ord.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
+                  </Text>
+                </View>
+                <View style={styles.orderHistoryBody}>
+                  <Text style={styles.orderHistoryItemsCount}>
+                    {ord.items.reduce((sum, i) => sum + i.quantity, 0)} items purchased
+                  </Text>
+                  <Text style={styles.orderHistoryTotal}>
+                    ${ord.total.toFixed(2)}
+                  </Text>
+                </View>
+                <Text style={styles.orderHistoryCardMask}>
+                  Charged via PayMongo (Card Ending: {ord.paymentDetails.cardNumberMasked.slice(-4)})
+                </Text>
+              </View>
+            ))
+          )}
+        </View>
+
         {/* Danger zone account deletion */}
         <View style={[styles.profileFormCard, styles.dangerCard]}>
           <Text style={[styles.formCardHeader, { color: COLORS.error }]}>DANGER ZONE</Text>
@@ -623,7 +741,10 @@ export default function App() {
 
             {/* Profile Tab button */}
             <TouchableOpacity
-              onPress={() => setActiveTab('Profile')}
+              onPress={() => {
+                setActiveTab('Profile');
+                fetchOrders(token);
+              }}
               activeOpacity={0.7}
               style={[styles.tabItem, activeTab === 'Profile' && styles.tabItemActive]}
             >
@@ -745,17 +866,55 @@ export default function App() {
     );
   };
 
-  return (
+  const isLargeWeb = Platform.OS === 'web' && windowWidth > 500;
+
+  const appContent = (
     <View style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor={COLORS.bg} />
       {renderScreen()}
     </View>
   );
+
+  if (isLargeWeb) {
+    return (
+      <View style={styles.webWrapper}>
+        <View style={styles.webDeviceMockup}>
+          {appContent}
+        </View>
+      </View>
+    );
+  }
+
+  return appContent;
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+  },
+  webWrapper: {
+    flex: 1,
+    width: '100vw',
+    height: '100vh',
+    backgroundColor: '#FFF1F2',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  webDeviceMockup: {
+    width: 400,
+    height: 800,
+    maxWidth: '95vw',
+    maxHeight: '95vh',
+    borderRadius: 30,
+    borderWidth: 8,
+    borderColor: '#4C0519',
+    overflow: 'hidden',
+    backgroundColor: '#FFFFFF',
+    shadowColor: '#4C0519',
+    shadowOffset: { width: 0, height: 16 },
+    shadowOpacity: 0.12,
+    shadowRadius: 24,
+    elevation: 8,
   },
   splashContainer: {
     flex: 1,
@@ -1211,6 +1370,55 @@ const styles = StyleSheet.create({
     fontSize: 32,
     fontWeight: '800',
     letterSpacing: 1,
+  },
+  emptyOrdersText: {
+    color: COLORS.textSecondary,
+    fontSize: 13,
+    textAlign: 'center',
+    paddingVertical: 12,
+    fontStyle: 'italic',
+  },
+  orderHistoryItem: {
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.border,
+    paddingVertical: 12,
+  },
+  orderHistoryHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 4,
+  },
+  orderHistoryNum: {
+    color: COLORS.primary,
+    fontSize: 14,
+    fontWeight: '800',
+  },
+  orderHistoryDate: {
+    color: COLORS.textSecondary,
+    fontSize: 11,
+    fontWeight: '600',
+  },
+  orderHistoryBody: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 4,
+  },
+  orderHistoryItemsCount: {
+    color: COLORS.text,
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  orderHistoryTotal: {
+    color: COLORS.text,
+    fontSize: 14,
+    fontWeight: '800',
+  },
+  orderHistoryCardMask: {
+    color: COLORS.textSecondary,
+    fontSize: 11,
+    fontWeight: '500',
   },
   profileName: {
     color: COLORS.text,

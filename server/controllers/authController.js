@@ -216,3 +216,78 @@ exports.getMe = async (req, res) => {
     res.status(500).json({ message: 'Server error, please try again later' });
   }
 };
+
+// @desc    Update user profile
+// @route   PUT /api/auth/profile
+// @access  Private
+exports.updateProfile = async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id);
+
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    const { name, email, password } = req.body;
+
+    if (name) user.name = name;
+    
+    if (email && email !== user.email) {
+      const emailExists = await User.findOne({ email });
+      if (emailExists) {
+        return res.status(400).json({ message: 'Email already in use' });
+      }
+      user.email = email;
+    }
+
+    if (password) {
+      if (password.length < 6) {
+        return res.status(400).json({ message: 'Password must be at least 6 characters' });
+      }
+      user.password = password;
+    }
+
+    await user.save();
+
+    // Create a new token with updated user information
+    const token = signToken(user._id);
+
+    res.status(200).json({
+      status: 'success',
+      message: 'Profile updated successfully!',
+      token,
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+      },
+    });
+  } catch (error) {
+    console.error('Update Profile Error:', error);
+    res.status(500).json({ message: 'Server error updating profile' });
+  }
+};
+
+// @desc    Delete user account and their orders
+// @route   DELETE /api/auth/profile
+// @access  Private
+exports.deleteProfile = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    
+    // Remove orders associated with the user first
+    const Order = require('../models/Order');
+    await Order.deleteMany({ user: userId });
+
+    // Remove user
+    await User.findByIdAndDelete(userId);
+
+    res.status(200).json({
+      status: 'success',
+      message: 'Account and orders permanently deleted.',
+    });
+  } catch (error) {
+    console.error('Delete Profile Error:', error);
+    res.status(500).json({ message: 'Server error deleting account' });
+  }
+};

@@ -26,6 +26,10 @@ app.use(express.static(path.join(__dirname, '..', 'client')));
 // Auth API Router endpoints
 app.use('/api/auth', require('./routes/authRoutes'));
 
+// E-Commerce API endpoints
+app.use('/api/products', require('./routes/productRoutes'));
+app.use('/api/orders', require('./routes/orderRoutes'));
+
 // Root Endpoint - Premium Server Status Panel
 app.get('/', (req, res) => {
   res.send(`
