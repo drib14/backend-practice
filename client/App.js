@@ -11,11 +11,13 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   Dimensions,
-  Platform,
+  TextInput,
+  ScrollView,
+  Modal,
 } from 'react-native';
-import { LogOut, ShoppingBag, CreditCard, Shield, Sparkles } from 'lucide-react-native';
+import { LogOut, ShoppingBag, CreditCard, Shield, Sparkles, ShoppingCart, User, Trash2, CheckCircle, ArrowRight } from 'lucide-react-native';
 import { COLORS } from './constants/theme';
-import { API_URL } from './config';
+import { API_URL, APP_NAME } from './config';
 
 // Import Screens
 import LoginScreen from './screens/LoginScreen';
@@ -23,6 +25,8 @@ import RegisterScreen from './screens/RegisterScreen';
 import ForgotPasswordScreen from './screens/ForgotPasswordScreen';
 import ResetPasswordScreen from './screens/ResetPasswordScreen';
 import BackgroundGradient from './components/BackgroundGradient';
+import CustomInput from './components/CustomInput';
+import CustomButton from './components/CustomButton';
 
 const { width, height } = Dimensions.get('window');
 
@@ -32,28 +36,28 @@ const PREMIUM_PRODUCTS = [
     id: '1',
     name: 'Keyshien Retro Heart Glasses',
     category: 'Eyewear',
-    price: '$28.00',
-    image: 'https://images.unsplash.com/photo-1511556532299-8f662fc26c06?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3', // Aesthetic accessory mockup
+    price: 28.00,
+    image: 'https://images.unsplash.com/photo-1511556532299-8f662fc26c06?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3', 
   },
   {
     id: '2',
     name: 'Crystal Bow Choker',
     category: 'Necklaces',
-    price: '$45.00',
-    image: 'https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3', // Premium jewelry
+    price: 45.00,
+    image: 'https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3', 
   },
   {
     id: '3',
     name: 'Pearl Star Stud Earrings',
     category: 'Earrings',
-    price: '$24.00',
+    price: 24.00,
     image: 'https://images.unsplash.com/photo-1535632066927-ab7c9ab60908?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3',
   },
   {
     id: '4',
     name: 'Pink Velvet Travel Organizer',
     category: 'Storage',
-    price: '$59.00',
+    price: 59.00,
     image: 'https://images.unsplash.com/photo-1601121141461-9d6647bca1ed?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3',
   },
 ];
@@ -63,18 +67,38 @@ export default function App() {
   const [currentScreen, setCurrentScreen] = useState('Login');
   const [routeParams, setRouteParams] = useState(null);
   
+  // Dashboard Sub-navigation Tabs: 'Boutique' | 'Cart' | 'Profile'
+  const [activeTab, setActiveTab] = useState('Boutique');
+
   // Authenticated State
   const [token, setToken] = useState(null);
   const [currentUser, setCurrentUser] = useState(null);
   
-  // Protected profile call state
-  const [profileMessage, setProfileMessage] = useState('Fetching protected data...');
+  // E-Commerce Cart State
+  const [cart, setCart] = useState([]);
+  const [checkoutVisible, setCheckoutVisible] = useState(false);
+  const [orderSuccessVisible, setOrderSuccessVisible] = useState(false);
+  const [lastOrderDetails, setLastOrderDetails] = useState(null);
+  const [payLoading, setPayLoading] = useState(false);
+
+  // PayMongo Card Inputs State
+  const [cardName, setCardName] = useState('');
+  const [cardNumber, setCardNumber] = useState('');
+  const [cardExpiry, setCardExpiry] = useState('');
+  const [cardCvv, setCardCvv] = useState('');
+
+  // Profile Edit / Password Forms State
+  const [editName, setEditName] = useState('');
+  const [editEmail, setEditEmail] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [profileLoading, setProfileLoading] = useState(false);
 
   // Splash Screen Timeout
   useEffect(() => {
     const timer = setTimeout(() => {
       setShowSplash(false);
-    }, 2500); // Plays for 2.5 seconds
+    }, 2500);
     return () => clearTimeout(timer);
   }, []);
 
@@ -87,65 +111,208 @@ export default function App() {
   const handleLoginSuccess = (data) => {
     setToken(data.token);
     setCurrentUser(data.user);
+    setEditName(data.user.name);
+    setEditEmail(data.user.email);
+    setActiveTab('Boutique');
     navigate('MainDashboard');
   };
 
   const handleSignOut = () => {
     setToken(null);
     setCurrentUser(null);
-    setProfileMessage('Fetching protected data...');
+    setCart([]);
     navigate('Login');
   };
 
-  // Run protected profile API call when dashboard is mounted
-  useEffect(() => {
-    if (currentScreen === 'MainDashboard' && token) {
-      fetchProtectedProfile();
+  // E-Commerce Buying Methods
+  const addToCart = (product) => {
+    const existing = cart.find(item => item.id === product.id);
+    if (existing) {
+      setCart(cart.map(item => item.id === product.id ? { ...item, quantity: item.quantity + 1 } : item));
+    } else {
+      setCart([...cart, { ...product, quantity: 1 }]);
     }
-  }, [currentScreen, token]);
+    Alert.alert('Item Added', `${product.name} has been added to your shopping cart.`);
+  };
 
-  const fetchProtectedProfile = async () => {
+  const updateCartQuantity = (id, delta) => {
+    const updated = cart.map(item => {
+      if (item.id === id) {
+        const newQty = item.quantity + delta;
+        return newQty > 0 ? { ...item, quantity: newQty } : null;
+      }
+      return item;
+    }).filter(Boolean);
+    setCart(updated);
+  };
+
+  const getCartTotal = () => {
+    return cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+  };
+
+  const triggerCheckout = () => {
+    if (cart.length === 0) {
+      Alert.alert('Empty Cart', 'Your shopping cart is currently empty.');
+      return;
+    }
+    setCardName(currentUser?.name || '');
+    setCardNumber('');
+    setCardExpiry('');
+    setCardCvv('');
+    setCheckoutVisible(true);
+  };
+
+  const handlePayMongoSubmit = () => {
+    if (!cardName || !cardNumber || !cardExpiry || !cardCvv) {
+      Alert.alert('Missing Details', 'Please fill out all PayMongo card details to secure authorization.');
+      return;
+    }
+
+    setPayLoading(true);
+    // Simulate PayMongo card authorization latency
+    setTimeout(() => {
+      const orderNum = `KS-${Math.floor(100000 + Math.random() * 900000)}`;
+      setLastOrderDetails({
+        orderNumber: orderNum,
+        total: getCartTotal() + 5.00,
+        items: [...cart]
+      });
+      setPayLoading(false);
+      setCheckoutVisible(false);
+      setCart([]); // Clear cart
+      setOrderSuccessVisible(true);
+    }, 2000);
+  };
+
+  // Profile Management API Methods
+  const handleUpdateProfile = async () => {
+    if (!editName || !editEmail) {
+      Alert.alert('Validation Error', 'Full Name and Email Address are required.');
+      return;
+    }
+
+    setProfileLoading(true);
     try {
-      const response = await fetch(`${API_URL}/me`, {
-        method: 'GET',
+      const response = await fetch(`${API_URL}/profile`, {
+        method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`,
         },
+        body: JSON.stringify({ name: editName, email: editEmail }),
       });
       const data = await response.json();
+
       if (response.status === 200) {
-        setProfileMessage(`✓ Authorization successful. Session active!`);
+        setCurrentUser(data.user);
+        Alert.alert('Profile Updated', 'Your profile details have been saved successfully.');
       } else {
-        setProfileMessage(`✗ Auth Token validation failed.`);
+        Alert.alert('Update Failed', data.message || 'Email already exists or invalid data.');
       }
     } catch (err) {
       console.error(err);
-      setProfileMessage('✗ Protected API failed: Network error.');
+      Alert.alert('Network Error', 'Failed to update details. Please check connection.');
+    } finally {
+      setProfileLoading(false);
     }
   };
 
-  // 1. GORGEOUS KEYSHEIN'S ACCESSORIES SPLASH SCREEN
+  const handleUpdatePassword = async () => {
+    if (!newPassword || !confirmPassword) {
+      Alert.alert('Validation Error', 'Please complete both password fields.');
+      return;
+    }
+    if (newPassword.length < 6) {
+      Alert.alert('Password Length', 'Password must be at least 6 characters.');
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      Alert.alert('Validation Error', 'Passwords do not match.');
+      return;
+    }
+
+    setProfileLoading(true);
+    try {
+      const response = await fetch(`${API_URL}/profile`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ password: newPassword }),
+      });
+      const data = await response.json();
+
+      if (response.status === 200) {
+        Alert.alert('Password Secure', 'Your security password has been changed successfully.');
+        setNewPassword('');
+        setConfirmPassword('');
+      } else {
+        Alert.alert('Update Failed', data.message || 'Failed to update password.');
+      }
+    } catch (err) {
+      console.error(err);
+      Alert.alert('Network Error', 'Could not change password. Please check network.');
+    } finally {
+      setProfileLoading(false);
+    }
+  };
+
+  const handleDeleteAccount = () => {
+    Alert.alert(
+      'Irreversible Action!',
+      'Are you absolutely sure you want to permanently delete your boutique account? All cart histories, security profiles, and shopping coordinates will be deleted from the database.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Permanently Terminate',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              const response = await fetch(`${API_URL}/profile`, {
+                method: 'DELETE',
+                headers: {
+                  'Content-Type': 'application/json',
+                  Authorization: `Bearer ${token}`,
+                },
+              });
+
+              if (response.status === 200) {
+                Alert.alert(
+                  'Account Terminated',
+                  'Your profile and all secure keys have been deleted. We hope to see you again!'
+                );
+                handleSignOut();
+              } else {
+                Alert.alert('Termination Failed', 'Could not complete account deletion request.');
+              }
+            } catch (err) {
+              console.error(err);
+              Alert.alert('Network Error', 'Failed to delete account. Connection timed out.');
+            }
+          }
+        }
+      ]
+    );
+  };
+
+  // 1. SPLASH SCREEN RENDER
   if (showSplash) {
     return (
       <BackgroundGradient>
         <SafeAreaView style={styles.splashContainer}>
           <StatusBar barStyle="dark-content" />
           <View style={styles.splashInner}>
-            {/* Double Border Circular Gold Frame for Platform Icon */}
             <View style={styles.splashLogoFrame}>
               <Image
                 source={require('./assets/icon.png')}
                 style={styles.splashLogoImage}
               />
             </View>
-
             <Text style={styles.splashSubtitle}>WELCOME TO</Text>
-            {/* Bold Keyshien Title */}
             <Text style={styles.splashTitle}>
-              <Text style={styles.extraBoldText}>Keyshien's</Text>{'\n'}Accessories
+              <Text style={styles.extraBoldText}>{APP_NAME}'s</Text>{'\n'}Accessories
             </Text>
-            
             <View style={styles.splashFooter}>
               <ActivityIndicator size="small" color={COLORS.primary} style={styles.loader} />
               <Text style={styles.splashLoadingText}>CREATING JOY...</Text>
@@ -156,7 +323,7 @@ export default function App() {
     );
   }
 
-  // Dynamic Screen Routing
+  // Dynamic Routing for Screens
   const renderScreen = () => {
     switch (currentScreen) {
       case 'Login':
@@ -170,7 +337,7 @@ export default function App() {
         return (
           <RegisterScreen
             onNavigate={navigate}
-            onLoginSuccess={handleLoginSuccess} // Enlists direct login hooks on registers
+            onLoginSuccess={handleLoginSuccess}
           />
         );
       case 'ForgotPassword':
@@ -199,78 +366,369 @@ export default function App() {
     }
   };
 
-  // Successful Post-Authentication Keyshien Pink Dashboard
+  // 2. MAIN BOUTIQUE FEED SCREEN
+  const renderBoutiqueTab = () => {
+    return (
+      <FlatList
+        data={PREMIUM_PRODUCTS}
+        keyExtractor={(item) => item.id}
+        numColumns={2}
+        columnWrapperStyle={styles.productRow}
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.productListContainer}
+        renderItem={({ item }) => (
+          <View style={styles.productCard}>
+            <Image source={{ uri: item.image }} style={styles.productImage} />
+            <View style={styles.productDetails}>
+              <Text style={styles.productCategory}>{item.category}</Text>
+              <Text style={styles.productName} numberOfLines={1}>
+                {item.name}
+              </Text>
+              <View style={styles.priceRow}>
+                <Text style={styles.productPrice}>${item.price.toFixed(2)}</Text>
+                <TouchableOpacity onPress={() => addToCart(item)} activeOpacity={0.6} style={styles.addButton}>
+                  <ShoppingBag size={14} color="#FFFFFF" strokeWidth={2.5} />
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        )}
+      />
+    );
+  };
+
+  // 3. SHOPPING CART SCREEN
+  const renderCartTab = () => {
+    if (cart.length === 0) {
+      return (
+        <View style={styles.emptyCartContainer}>
+          <ShoppingCart size={48} color={COLORS.placeholder} style={{ marginBottom: 12 }} />
+          <Text style={styles.emptyCartTitle}>Your cart is empty</Text>
+          <Text style={styles.emptyCartSub}>Add lovely pink accessories from the Boutique feed to get started.</Text>
+          <CustomButton title="Explore Boutique" onPress={() => setActiveTab('Boutique')} style={{ width: 180, marginTop: 16 }} />
+        </View>
+      );
+    }
+
+    return (
+      <ScrollView contentContainerStyle={styles.cartScroll} showsVerticalScrollIndicator={false}>
+        {/* Cart items list */}
+        {cart.map((item) => (
+          <View key={item.id} style={styles.cartItemCard}>
+            <Image source={{ uri: item.image }} style={styles.cartItemImg} />
+            <View style={styles.cartItemDetails}>
+              <Text style={styles.cartItemName}>{item.name}</Text>
+              <Text style={styles.cartItemCategory}>{item.category}</Text>
+              <Text style={styles.cartItemPrice}>${item.price.toFixed(2)}</Text>
+            </View>
+            <View style={styles.quantityControls}>
+              <TouchableOpacity onPress={() => updateCartQuantity(item.id, -1)} activeOpacity={0.6} style={styles.qtyBtn}>
+                <Text style={styles.qtyBtnText}>-</Text>
+              </TouchableOpacity>
+              <Text style={styles.qtyText}>{item.quantity}</Text>
+              <TouchableOpacity onPress={() => updateCartQuantity(item.id, 1)} activeOpacity={0.6} style={styles.qtyBtn}>
+                <Text style={styles.qtyBtnText}>+</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        ))}
+
+        {/* Pricing Summary */}
+        <View style={styles.summaryCard}>
+          <Text style={styles.summaryTitle}>ORDER SUMMARY</Text>
+          <View style={styles.summaryRow}>
+            <Text style={styles.summaryLabel}>Subtotal</Text>
+            <Text style={styles.summaryVal}>${getCartTotal().toFixed(2)}</Text>
+          </View>
+          <View style={styles.summaryRow}>
+            <Text style={styles.summaryLabel}>Boutique Logistics</Text>
+            <Text style={styles.summaryVal}>$5.00</Text>
+          </View>
+          <View style={[styles.summaryRow, styles.totalRow]}>
+            <Text style={styles.totalLabel}>Total</Text>
+            <Text style={styles.totalVal}>${(getCartTotal() + 5.00).toFixed(2)}</Text>
+          </View>
+          
+          <CustomButton
+            title="Proceed to Secure Checkout"
+            onPress={triggerCheckout}
+            style={{ marginTop: 8 }}
+          />
+        </View>
+      </ScrollView>
+    );
+  };
+
+  // 4. PROFILE & ACCOUNT SCREEN
+  const renderProfileTab = () => {
+    return (
+      <ScrollView contentContainerStyle={styles.profileScroll} showsVerticalScrollIndicator={false}>
+        {/* Profile Card details */}
+        <View style={styles.profileHeaderCard}>
+          <Image source={require('./assets/icon.png')} style={styles.profilePhoto} />
+          <Text style={styles.profileName}>{currentUser?.name || 'Guest'}</Text>
+          <Text style={styles.profileEmail}>{currentUser?.email || 'guest@keyshien.com'}</Text>
+        </View>
+
+        {/* Edit details form */}
+        <View style={styles.profileFormCard}>
+          <Text style={styles.formCardHeader}>EDIT PROFILE DETAILS</Text>
+          <CustomInput
+            label="Full Name"
+            iconName="User"
+            value={editName}
+            onChangeText={setEditName}
+            placeholder="Edit name"
+          />
+          <CustomInput
+            label="Email Address"
+            iconName="Mail"
+            value={editEmail}
+            onChangeText={setEditEmail}
+            placeholder="Edit email address"
+            keyboardType="email-address"
+          />
+          <CustomButton
+            title="Save Profile Details"
+            onPress={handleUpdateProfile}
+            loading={profileLoading}
+            style={{ marginTop: 8, height: 46 }}
+          />
+        </View>
+
+        {/* Change password form */}
+        <View style={styles.profileFormCard}>
+          <Text style={styles.formCardHeader}>CHANGE PASSWORD</Text>
+          <CustomInput
+            label="New Password"
+            iconName="Lock"
+            value={newPassword}
+            onChangeText={setNewPassword}
+            placeholder="Enter new password"
+            secureTextEntry
+          />
+          <CustomInput
+            label="Confirm New Password"
+            iconName="Lock"
+            value={confirmPassword}
+            onChangeText={setConfirmPassword}
+            placeholder="Confirm new password"
+            secureTextEntry
+          />
+          <CustomButton
+            title="Update Password"
+            onPress={handleUpdatePassword}
+            loading={profileLoading}
+            style={{ marginTop: 8, height: 46 }}
+          />
+        </View>
+
+        {/* Danger zone account deletion */}
+        <View style={[styles.profileFormCard, styles.dangerCard]}>
+          <Text style={[styles.formCardHeader, { color: COLORS.error }]}>DANGER ZONE</Text>
+          <Text style={styles.dangerDesc}>
+            Deleting your account will permanently wipe all database credentials and details. This cannot be undone.
+          </Text>
+          <TouchableOpacity onPress={handleDeleteAccount} activeOpacity={0.6} style={styles.deleteAccBtn}>
+            <Trash2 size={16} color={COLORS.error} style={{ marginRight: 6 }} />
+            <Text style={styles.deleteAccText}>Delete Account Permanently</Text>
+          </TouchableOpacity>
+        </View>
+      </ScrollView>
+    );
+  };
+
+  // Dynamic dashboard tabs compiler
+  const renderActiveTab = () => {
+    switch (activeTab) {
+      case 'Boutique':
+        return renderBoutiqueTab();
+      case 'Cart':
+        return renderCartTab();
+      case 'Profile':
+        return renderProfileTab();
+      default:
+        return renderBoutiqueTab();
+    }
+  };
+
+  // Main Dashboard wrapper
   const renderMainDashboard = () => {
+    const cartCount = cart.reduce((sum, item) => sum + item.quantity, 0);
+
     return (
       <BackgroundGradient>
         <SafeAreaView style={styles.dashboardContainer}>
           <StatusBar barStyle="dark-content" />
           
-          {/* Dashboard Header */}
+          {/* Header */}
           <View style={styles.dashboardHeader}>
             <View style={styles.dashboardHeaderLeft}>
-              {/* Mini Platform Icon */}
               <Image source={require('./assets/icon.png')} style={styles.headerMiniIcon} />
               <View>
-                <Text style={styles.welcomeLabel}>HELLO, LOVELY</Text>
-                <Text style={styles.userName} numberOfLines={1}>
-                  {currentUser?.name || 'Veloce Guest'}
+                <Text style={styles.welcomeLabel}>WELCOME TO</Text>
+                <Text style={styles.userName}>
+                  <Text style={styles.extraBoldText}>{APP_NAME}</Text>'s
                 </Text>
               </View>
             </View>
             <TouchableOpacity onPress={handleSignOut} activeOpacity={0.6} style={styles.logoutBtn}>
-              <LogOut size={18} color={COLORS.primary} />
+              <LogOut size={16} color={COLORS.primary} />
             </TouchableOpacity>
           </View>
 
-          {/* Secure Session Token info Card */}
-          <View style={styles.securePanelCard}>
-            <View style={styles.panelTitleRow}>
-              <Shield size={15} color={COLORS.primary} style={styles.shieldIcon} />
-              <Text style={styles.secureCardTitle}>SECURE AUTHORIZED SESSION</Text>
-            </View>
-            <Text style={styles.secureStatusText}>{profileMessage}</Text>
-            <Text numberOfLines={1} style={styles.tokenText}>
-              JWT: {token}
-            </Text>
-          </View>
+          {/* Render Active Tab Screen */}
+          <View style={{ flex: 1 }}>{renderActiveTab()}</View>
 
-          {/* E-Commerce Section Title */}
-          <View style={styles.sectionHeaderRow}>
-            <Text style={styles.sectionTitle}>Boutique Feed</Text>
-            <View style={styles.badgeRow}>
-              <Sparkles size={12} color={COLORS.primary} style={{ marginRight: 4 }} />
-              <Text style={styles.sectionBadge}>EXCLUSIVE ITEMS</Text>
-            </View>
-          </View>
+          {/* Customized Bottom Tab Navigator bar */}
+          <View style={styles.tabBar}>
+            {/* Boutique Tab button */}
+            <TouchableOpacity
+              onPress={() => setActiveTab('Boutique')}
+              activeOpacity={0.7}
+              style={[styles.tabItem, activeTab === 'Boutique' && styles.tabItemActive]}
+            >
+              <ShoppingBag size={20} color={activeTab === 'Boutique' ? COLORS.primary : COLORS.textSecondary} />
+              <Text style={[styles.tabText, activeTab === 'Boutique' && styles.tabTextActive]}>Boutique</Text>
+            </TouchableOpacity>
 
-          {/* Product Feed Grid */}
-          <FlatList
-            data={PREMIUM_PRODUCTS}
-            keyExtractor={(item) => item.id}
-            numColumns={2}
-            columnWrapperStyle={styles.productRow}
-            showsVerticalScrollIndicator={false}
-            contentContainerStyle={styles.productListContainer}
-            renderItem={({ item }) => (
-              <View style={styles.productCard}>
-                <Image source={{ uri: item.image }} style={styles.productImage} />
-                <View style={styles.productDetails}>
-                  <Text style={styles.productCategory}>{item.category}</Text>
-                  <Text style={styles.productName} numberOfLines={1}>
-                    {item.name}
-                  </Text>
-                  <View style={styles.priceRow}>
-                    <Text style={styles.productPrice}>{item.price}</Text>
-                    <TouchableOpacity activeOpacity={0.6} style={styles.addButton}>
-                      <ShoppingBag size={14} color="#FFFFFF" strokeWidth={2.5} />
-                    </TouchableOpacity>
+            {/* Cart Tab button */}
+            <TouchableOpacity
+              onPress={() => setActiveTab('Cart')}
+              activeOpacity={0.7}
+              style={[styles.tabItem, activeTab === 'Cart' && styles.tabItemActive]}
+            >
+              <View style={styles.cartIconWrapper}>
+                <ShoppingCart size={20} color={activeTab === 'Cart' ? COLORS.primary : COLORS.textSecondary} />
+                {cartCount > 0 && (
+                  <View style={styles.badge}>
+                    <Text style={styles.badgeText}>{cartCount}</Text>
+                  </View>
+                )}
+              </View>
+              <Text style={[styles.tabText, activeTab === 'Cart' && styles.tabTextActive]}>Cart</Text>
+            </TouchableOpacity>
+
+            {/* Profile Tab button */}
+            <TouchableOpacity
+              onPress={() => setActiveTab('Profile')}
+              activeOpacity={0.7}
+              style={[styles.tabItem, activeTab === 'Profile' && styles.tabItemActive]}
+            >
+              <User size={20} color={activeTab === 'Profile' ? COLORS.primary : COLORS.textSecondary} />
+              <Text style={[styles.tabText, activeTab === 'Profile' && styles.tabTextActive]}>Profile</Text>
+            </TouchableOpacity>
+          </View>
+        </SafeAreaView>
+
+        {/* PAYMONGO SECURE CHECKOUT MODAL OVERLAY */}
+        <Modal visible={checkoutVisible} animationType="slide" transparent={true} onRequestClose={() => setCheckoutVisible(false)}>
+          <View style={styles.modalBg}>
+            <View style={styles.checkoutSheet}>
+              {/* Sheet header */}
+              <View style={styles.sheetHeader}>
+                <View style={styles.paymongoLogoRow}>
+                  <CreditCard size={18} color={COLORS.primary} style={{ marginRight: 6 }} />
+                  <Text style={styles.paymongoTitle}>Pay<Text style={styles.extraBoldText}>Mongo</Text> SECURE</Text>
+                </View>
+                <TouchableOpacity onPress={() => setCheckoutVisible(false)} activeOpacity={0.6} style={styles.closeSheetBtn}>
+                  <Text style={styles.closeSheetText}>Cancel</Text>
+                </TouchableOpacity>
+              </View>
+
+              <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ padding: 20 }}>
+                <Text style={styles.paymentSummaryLabel}>PAYMENT FOR ORDER</Text>
+                <Text style={styles.paymentSummaryAmt}>${(getCartTotal() + 5.00).toFixed(2)}</Text>
+                
+                <CustomInput
+                  label="Cardholder Full Name"
+                  iconName="User"
+                  value={cardName}
+                  onChangeText={setCardName}
+                  placeholder="e.g. Lovely Keyshien User"
+                />
+
+                <CustomInput
+                  label="Card Number"
+                  iconName="CreditCard"
+                  value={cardNumber}
+                  onChangeText={(text) => setCardNumber(text.replace(/[^0-9]/g, '').substring(0, 16))}
+                  placeholder="4111 1111 2222 3333"
+                  keyboardType="numeric"
+                  maxLength={16}
+                />
+
+                <View style={styles.cardExpiryRow}>
+                  <View style={{ width: '48%' }}>
+                    <CustomInput
+                      label="Expiry Date"
+                      iconName="Calendar"
+                      value={cardExpiry}
+                      onChangeText={(text) => setCardExpiry(text.substring(0, 5))}
+                      placeholder="MM/YY"
+                      maxLength={5}
+                    />
+                  </View>
+                  <View style={{ width: '48%' }}>
+                    <CustomInput
+                      label="CVV"
+                      iconName="ShieldAlert"
+                      value={cardCvv}
+                      onChangeText={(text) => setCardCvv(text.replace(/[^0-9]/g, '').substring(0, 3))}
+                      placeholder="***"
+                      keyboardType="numeric"
+                      secureTextEntry
+                      maxLength={3}
+                    />
                   </View>
                 </View>
+
+                {payLoading ? (
+                  <View style={{ marginVertical: 12, alignItems: 'center' }}>
+                    <ActivityIndicator size="large" color={COLORS.primary} />
+                    <Text style={styles.processingText}>Authorizing PayMongo Secure Tokens...</Text>
+                  </View>
+                ) : (
+                  <CustomButton
+                    title="Pay with PayMongo Gateway"
+                    onPress={handlePayMongoSubmit}
+                    style={{ marginTop: 12 }}
+                  />
+                )}
+              </ScrollView>
+            </View>
+          </View>
+        </Modal>
+
+        {/* ORDER SUCCESS MODAL OVERLAY */}
+        <Modal visible={orderSuccessVisible} animationType="fade" transparent={true}>
+          <BackgroundGradient>
+            <SafeAreaView style={styles.successWrapper}>
+              <View style={styles.successContainer}>
+                <CheckCircle size={76} color={COLORS.primary} strokeWidth={1.5} style={{ marginBottom: 20 }} />
+                <Text style={styles.successTitle}>Order Confirmed!</Text>
+                <Text style={styles.successDesc}>Your accessories payment has processed successfully.</Text>
+                
+                {/* Order specs card */}
+                <View style={styles.orderSpecsCard}>
+                  <Text style={styles.specsLabel}>ORDER TRACKING ID</Text>
+                  <Text style={styles.specsVal}>{lastOrderDetails?.orderNumber}</Text>
+                  <Text style={styles.specsLabel}>TOTAL AMOUNT CHARGED</Text>
+                  <Text style={styles.specsTotal}>${lastOrderDetails?.total.toFixed(2)}</Text>
+                </View>
+
+                <CustomButton
+                  title="Continue Shopping"
+                  onPress={() => {
+                    setOrderSuccessVisible(false);
+                    setActiveTab('Boutique');
+                  }}
+                  style={{ width: 220, marginTop: 16 }}
+                />
               </View>
-            )}
-          />
-        </SafeAreaView>
+            </SafeAreaView>
+          </BackgroundGradient>
+        </Modal>
       </BackgroundGradient>
     );
   };
@@ -388,20 +846,16 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: '800',
     marginTop: 1,
-    maxWidth: 160,
   },
   logoutBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     backgroundColor: COLORS.bgCard,
     borderWidth: 1.5,
     borderColor: COLORS.border,
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: COLORS.primary,
-    shadowOpacity: 0.05,
-    shadowRadius: 5,
   },
   securePanelCard: {
     backgroundColor: 'rgba(255, 255, 255, 0.8)',
@@ -446,7 +900,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 24,
-    marginTop: 8,
+    marginTop: 12,
     marginBottom: 12,
   },
   sectionTitle: {
@@ -523,5 +977,387 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  tabBar: {
+    flexDirection: 'row',
+    height: 64,
+    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+    borderTopWidth: 1.5,
+    borderTopColor: COLORS.border,
+    paddingBottom: Platform.OS === 'ios' ? 8 : 0,
+  },
+  tabItem: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  tabItemActive: {
+    borderTopWidth: 2,
+    borderTopColor: COLORS.primary,
+  },
+  tabText: {
+    color: COLORS.textSecondary,
+    fontSize: 11,
+    fontWeight: '500',
+    marginTop: 4,
+  },
+  tabTextActive: {
+    color: COLORS.primary,
+    fontWeight: '700',
+  },
+  cartIconWrapper: {
+    position: 'relative',
+  },
+  badge: {
+    position: 'absolute',
+    right: -8,
+    top: -6,
+    backgroundColor: COLORS.primary,
+    borderRadius: 8,
+    width: 16,
+    height: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  badgeText: {
+    color: '#FFFFFF',
+    fontSize: 9,
+    fontWeight: '800',
+  },
+  emptyCartContainer: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 32,
+  },
+  emptyCartTitle: {
+    color: COLORS.text,
+    fontSize: 18,
+    fontWeight: '700',
+    marginBottom: 4,
+  },
+  emptyCartSub: {
+    color: COLORS.textSecondary,
+    fontSize: 14,
+    textAlign: 'center',
+    lineHeight: 20,
+  },
+  cartScroll: {
+    padding: 20,
+    paddingBottom: 40,
+  },
+  cartItemCard: {
+    flexDirection: 'row',
+    backgroundColor: COLORS.bgCard,
+    borderRadius: 16,
+    borderWidth: 1.5,
+    borderColor: COLORS.border,
+    padding: 12,
+    marginBottom: 12,
+    alignItems: 'center',
+  },
+  cartItemImg: {
+    width: 60,
+    height: 60,
+    borderRadius: 10,
+    resizeMode: 'cover',
+  },
+  cartItemDetails: {
+    flex: 1,
+    marginLeft: 12,
+  },
+  cartItemName: {
+    color: COLORS.text,
+    fontSize: 14,
+    fontWeight: '700',
+  },
+  cartItemCategory: {
+    color: COLORS.textSecondary,
+    fontSize: 10,
+    fontWeight: '600',
+    textTransform: 'uppercase',
+    marginTop: 2,
+  },
+  cartItemPrice: {
+    color: COLORS.primary,
+    fontSize: 14,
+    fontWeight: '700',
+    marginTop: 4,
+  },
+  quantityControls: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+    borderWidth: 1.5,
+    borderColor: COLORS.border,
+    borderRadius: 8,
+  },
+  qtyBtn: {
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+  },
+  qtyBtnText: {
+    color: COLORS.primary,
+    fontSize: 16,
+    fontWeight: '700',
+  },
+  qtyText: {
+    color: COLORS.text,
+    fontSize: 14,
+    fontWeight: '700',
+    paddingHorizontal: 4,
+  },
+  summaryCard: {
+    backgroundColor: COLORS.bgCard,
+    borderRadius: 16,
+    borderWidth: 1.5,
+    borderColor: COLORS.border,
+    padding: 20,
+    marginTop: 12,
+  },
+  summaryTitle: {
+    color: COLORS.text,
+    fontSize: 14,
+    fontWeight: '800',
+    letterSpacing: 0.5,
+    marginBottom: 16,
+  },
+  summaryRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 10,
+  },
+  summaryLabel: {
+    color: COLORS.textSecondary,
+    fontSize: 14,
+    fontWeight: '400',
+  },
+  summaryVal: {
+    color: COLORS.text,
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  totalRow: {
+    borderTopWidth: 1.5,
+    borderTopColor: COLORS.border,
+    paddingTop: 12,
+    marginTop: 4,
+    marginBottom: 16,
+  },
+  totalLabel: {
+    color: COLORS.text,
+    fontSize: 15,
+    fontWeight: '800',
+  },
+  totalVal: {
+    color: COLORS.primary,
+    fontSize: 18,
+    fontWeight: '800',
+  },
+  profileScroll: {
+    padding: 20,
+    paddingBottom: 40,
+  },
+  profileHeaderCard: {
+    backgroundColor: COLORS.bgCard,
+    borderWidth: 1.5,
+    borderColor: COLORS.border,
+    borderRadius: 20,
+    padding: 24,
+    alignItems: 'center',
+    marginBottom: 16,
+    shadowColor: '#4C0519',
+    shadowOpacity: 0.03,
+    shadowRadius: 10,
+  },
+  profilePhoto: {
+    width: 90,
+    height: 90,
+    borderRadius: 45,
+    borderWidth: 3,
+    borderColor: '#FFFFFF',
+    backgroundColor: '#FFFFFF',
+    marginBottom: 12,
+  },
+  profileName: {
+    color: COLORS.text,
+    fontSize: 18,
+    fontWeight: '800',
+  },
+  profileEmail: {
+    color: COLORS.textSecondary,
+    fontSize: 13,
+    fontWeight: '500',
+    marginTop: 2,
+  },
+  profileFormCard: {
+    backgroundColor: COLORS.bgCard,
+    borderRadius: 16,
+    borderWidth: 1.5,
+    borderColor: COLORS.border,
+    padding: 20,
+    marginBottom: 16,
+  },
+  formCardHeader: {
+    color: COLORS.text,
+    fontSize: 12,
+    fontWeight: '800',
+    letterSpacing: 0.5,
+    marginBottom: 16,
+  },
+  dangerCard: {
+    borderColor: 'rgba(244, 63, 94, 0.25)',
+  },
+  dangerDesc: {
+    color: COLORS.textSecondary,
+    fontSize: 13,
+    lineHeight: 18,
+    marginBottom: 16,
+  },
+  deleteAccBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    height: 46,
+    borderRadius: 10,
+    borderWidth: 1.5,
+    borderColor: COLORS.error,
+    backgroundColor: 'rgba(244, 63, 94, 0.05)',
+  },
+  deleteAccText: {
+    color: COLORS.error,
+    fontSize: 14,
+    fontWeight: '700',
+  },
+  modalBg: {
+    flex: 1,
+    backgroundColor: 'rgba(10, 10, 15, 0.55)',
+    justifyContent: 'flex-end',
+  },
+  checkoutSheet: {
+    backgroundColor: '#FFFFFF',
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    maxHeight: height * 0.8,
+    width: '100%',
+    maxWidth: 480,
+    alignSelf: 'center',
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: -8 },
+    shadowOpacity: 0.15,
+    shadowRadius: 20,
+    elevation: 20,
+  },
+  sheetHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    borderBottomWidth: 1.5,
+    borderBottomColor: COLORS.border,
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+  },
+  paymongoLogoRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  paymongoTitle: {
+    color: COLORS.text,
+    fontSize: 16,
+    fontWeight: '400',
+    letterSpacing: 0.5,
+  },
+  closeSheetBtn: {
+    padding: 4,
+  },
+  closeSheetText: {
+    color: COLORS.textSecondary,
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  paymentSummaryLabel: {
+    color: COLORS.textMuted,
+    fontSize: 11,
+    fontWeight: '700',
+    letterSpacing: 1,
+    textAlign: 'center',
+    marginBottom: 4,
+  },
+  paymentSummaryAmt: {
+    color: COLORS.primary,
+    fontSize: 32,
+    fontWeight: '800',
+    textAlign: 'center',
+    marginBottom: 20,
+  },
+  cardExpiryRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  processingText: {
+    color: COLORS.primary,
+    fontSize: 13,
+    fontWeight: '600',
+    marginTop: 8,
+  },
+  successWrapper: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  successContainer: {
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1.5,
+    borderColor: COLORS.border,
+    borderRadius: 24,
+    width: '88%',
+    maxWidth: 380,
+    padding: 32,
+    alignItems: 'center',
+    shadowColor: '#4C0519',
+    shadowOpacity: 0.08,
+    shadowRadius: 20,
+    elevation: 8,
+  },
+  successTitle: {
+    color: COLORS.text,
+    fontSize: 22,
+    fontWeight: '800',
+  },
+  successDesc: {
+    color: COLORS.textSecondary,
+    fontSize: 14,
+    textAlign: 'center',
+    lineHeight: 20,
+    marginTop: 6,
+    marginBottom: 24,
+  },
+  orderSpecsCard: {
+    width: '100%',
+    backgroundColor: COLORS.bg,
+    borderRadius: 14,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(236, 72, 153, 0.1)',
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  specsLabel: {
+    color: COLORS.textSecondary,
+    fontSize: 10,
+    fontWeight: '700',
+    letterSpacing: 1,
+    marginBottom: 2,
+  },
+  specsVal: {
+    color: COLORS.text,
+    fontSize: 16,
+    fontWeight: '800',
+    marginBottom: 16,
+  },
+  specsTotal: {
+    color: COLORS.primary,
+    fontSize: 20,
+    fontWeight: '800',
   },
 });

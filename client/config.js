@@ -4,4 +4,4 @@
 // For Real Device development: http://YOUR_LOCAL_IP:5000/api/auth
 
 export const API_URL = 'http://localhost:5000/api/auth';
-export const APP_NAME = 'VELOCE';
+export const APP_NAME = 'Keyshien';
