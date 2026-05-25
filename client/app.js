@@ -444,6 +444,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
+  // Custom table loading trigger
   function showTableLoading() {
     elements.tbody.innerHTML = `
       <tr>

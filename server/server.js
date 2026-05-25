@@ -9,8 +9,8 @@ const DATA_FILE = path.join(__dirname, 'data', 'products.json');
 // Middleware: Parse JSON bodies
 app.use(express.json());
 
-// Middleware: Serve static files from the 'public' directory
-app.use(express.static(path.join(__dirname, 'public')));
+// Middleware: Serve static files from the restructured 'client' directory
+app.use(express.static(path.join(__dirname, '..', 'client')));
 
 // Middleware: Custom Request Logger
 app.use((req, res, next) => {
@@ -229,9 +229,9 @@ app.delete('/api/products/:id', async (req, res, next) => {
   }
 });
 
-// Fallback for SPA Routing: Send index.html for any other route
+// Fallback for SPA Routing: Send index.html from restructured client folder
 app.get('*splat', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+  res.sendFile(path.join(__dirname, '..', 'client', 'index.html'));
 });
 
 // Global Error Handling Middleware
@@ -246,7 +246,7 @@ app.use((err, req, res, next) => {
 // Start Server
 app.listen(PORT, () => {
   console.log(`\n======================================================`);
-  console.log(`🚀 Inventory CRUD Backend running at http://localhost:${PORT}`);
+  console.log(`🚀 Restructured Inventory CRUD Backend running at http://localhost:${PORT}`);
   console.log(`📂 Database file stored at: ${DATA_FILE}`);
   console.log(`======================================================\n`);
 });

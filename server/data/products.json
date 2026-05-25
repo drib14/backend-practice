@@ -21,7 +21,7 @@
     "id": "3",
     "name": "AeroSound ANC Headphones",
     "description": "Hybrid active noise canceling headphones with high-res audio drivers and 40-hour battery life.",
-    "price": 149,
+    "price": 149.00,
     "stock": 0,
     "category": "Audio",
     "createdAt": "2026-05-22T08:05:00.000Z"
@@ -39,7 +39,7 @@
     "id": "5",
     "name": "Lumina Smart Desk Lamp",
     "description": "Wi-Fi enabled desk light with auto-brightness tuning, color temperature control, and phone charger base.",
-    "price": 45.5,
+    "price": 45.50,
     "stock": 25,
     "category": "Office",
     "createdAt": "2026-05-24T16:30:10.000Z"
