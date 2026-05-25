@@ -17,7 +17,7 @@ export default function BackgroundGradient({ children }) {
 
       {/* Subtle overlay gradient to blend everything */}
       <LinearGradient
-        colors={['rgba(8, 8, 12, 0.45)', 'rgba(15, 10, 25, 0.7)', 'rgba(8, 8, 12, 0.9)']}
+        colors={['rgba(255, 241, 242, 0.6)', 'rgba(255, 228, 230, 0.85)', 'rgba(255, 241, 242, 0.95)']}
         style={StyleSheet.absoluteFill}
       />
 
@@ -39,21 +39,20 @@ const styles = StyleSheet.create({
   },
   glowTopLeft: {
     position: 'absolute',
-    top: -height * 0.1,
-    left: -width * 0.1,
-    width: width * 0.85,
-    height: width * 0.85,
-    borderRadius: (width * 0.85) / 2,
-    backgroundColor: 'rgba(99, 102, 241, 0.12)', // Indigo Glow
-    filter: [{ blur: 50 }], // Web/Native compatibility fallback note: in RN, we configure overlay styles
+    top: -height * 0.15,
+    left: -width * 0.15,
+    width: width * 0.9,
+    height: width * 0.9,
+    borderRadius: (width * 0.9) / 2,
+    backgroundColor: 'rgba(236, 72, 153, 0.22)', // Soft Hot Pink Glow
   },
   glowBottomRight: {
     position: 'absolute',
-    bottom: -height * 0.1,
-    right: -width * 0.1,
-    width: width * 0.85,
-    height: width * 0.85,
-    borderRadius: (width * 0.85) / 2,
-    backgroundColor: 'rgba(234, 179, 8, 0.05)', // Amber Glow
+    bottom: -height * 0.15,
+    right: -width * 0.15,
+    width: width * 0.9,
+    height: width * 0.9,
+    borderRadius: (width * 0.9) / 2,
+    backgroundColor: 'rgba(234, 179, 8, 0.1)', // Gold Glow
   },
 });

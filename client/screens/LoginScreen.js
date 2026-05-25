@@ -9,10 +9,10 @@ import {
   ScrollView,
   SafeAreaView,
   Alert,
+  Image,
 } from 'react-native';
-import { ShoppingBag } from 'lucide-react-native';
-import { COLORS, FONTS } from '../constants/theme';
-import { API_URL, APP_NAME } from '../config';
+import { COLORS } from '../constants/theme';
+import { API_URL } from '../config';
 import BackgroundGradient from '../components/BackgroundGradient';
 import CustomInput from '../components/CustomInput';
 import CustomButton from '../components/CustomButton';
@@ -63,21 +63,7 @@ export default function LoginScreen({ onNavigate, onLoginSuccess }) {
       const data = await response.json();
 
       if (response.status === 200) {
-        if (data.status === 'unverified') {
-          // Automatic redirection to OTP verify screen!
-          Alert.alert(
-            'Account Unverified',
-            'Your email address is not verified yet. A new verification OTP code has been sent to your inbox.',
-            [
-              {
-                text: 'Verify Now',
-                onPress: () => onNavigate('Verify', { email: data.email }),
-              },
-            ]
-          );
-        } else {
-          onLoginSuccess(data);
-        }
+        onLoginSuccess(data);
       } else {
         Alert.alert('Login Failed', data.message || 'Invalid credentials');
       }
@@ -85,7 +71,7 @@ export default function LoginScreen({ onNavigate, onLoginSuccess }) {
       console.error('Login Fetch Error:', err);
       Alert.alert(
         'Network Error',
-        'Could not connect to the authentication server. Please check your server status or API URL in config.js.'
+        'Could not connect to the boutique server. Please verify your connection status.'
       );
     } finally {
       setLoading(false);
@@ -105,11 +91,17 @@ export default function LoginScreen({ onNavigate, onLoginSuccess }) {
           >
             {/* Header Branding */}
             <View style={styles.header}>
-              <View style={styles.logoIcon}>
-                <ShoppingBag size={32} color="#FFFFFF" strokeWidth={2} />
+              <View style={styles.logoIconFrame}>
+                <Image
+                  source={require('../assets/icon.png')}
+                  style={styles.logoIconImage}
+                />
               </View>
-              <Text style={styles.title}>{APP_NAME}</Text>
-              <Text style={styles.subtitle}>PREMIUM E-COMMERCE PORTAL</Text>
+              {/* Bold Keyshien Title */}
+              <Text style={styles.title}>
+                <Text style={styles.extraBoldText}>Keyshien's</Text>{'\n'}Accessories
+              </Text>
+              <Text style={styles.subtitle}>EXCLUSIVE INVENTORY PORTAL</Text>
             </View>
 
             {/* Glassmorphic Form Card */}
@@ -125,7 +117,7 @@ export default function LoginScreen({ onNavigate, onLoginSuccess }) {
                   setEmail(text);
                   if (errors.email) setErrors({ ...errors, email: null });
                 }}
-                placeholder="Enter your email address"
+                placeholder="Enter your email"
                 keyboardType="email-address"
                 error={errors.email}
               />
@@ -156,7 +148,7 @@ export default function LoginScreen({ onNavigate, onLoginSuccess }) {
 
               {/* Sign Up Navigation */}
               <View style={styles.footerLinkContainer}>
-                <Text style={styles.footerLabel}>New to {APP_NAME}? </Text>
+                <Text style={styles.footerLabel}>New here? </Text>
                 <TouchableOpacity onPress={() => onNavigate('Register')} activeOpacity={0.6}>
                   <Text style={styles.footerActionText}>Create Account</Text>
                 </TouchableOpacity>
@@ -183,34 +175,47 @@ const styles = StyleSheet.create({
   },
   header: {
     alignItems: 'center',
-    marginBottom: 32,
+    marginBottom: 24,
   },
-  logoIcon: {
-    width: 68,
-    height: 68,
-    borderRadius: 20,
-    backgroundColor: COLORS.primary,
+  logoIconFrame: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    borderWidth: 3,
+    borderColor: '#FFFFFF',
+    backgroundColor: '#FFFFFF',
+    overflow: 'hidden',
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 16,
     shadowColor: COLORS.primary,
     shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.35,
-    shadowRadius: 12,
-    elevation: 8,
+    shadowOpacity: 0.12,
+    shadowRadius: 10,
+    elevation: 6,
+  },
+  logoIconImage: {
+    width: '100%',
+    height: '100%',
+    resizeMode: 'cover',
   },
   title: {
     color: COLORS.text,
-    fontSize: 28,
+    fontSize: 26,
+    fontWeight: '400',
+    textAlign: 'center',
+    letterSpacing: 0.5,
+  },
+  extraBoldText: {
     fontWeight: '800',
-    letterSpacing: 2,
+    color: COLORS.primary,
   },
   subtitle: {
-    color: COLORS.accent,
+    color: COLORS.textSecondary,
     fontSize: 10,
     fontWeight: '700',
-    letterSpacing: 3,
-    marginTop: 4,
+    letterSpacing: 2,
+    marginTop: 6,
   },
   card: {
     backgroundColor: COLORS.bgCard,
@@ -218,11 +223,11 @@ const styles = StyleSheet.create({
     borderWidth: 1.5,
     borderColor: COLORS.border,
     padding: 24,
-    shadowColor: '#000000',
+    shadowColor: '#4C0519',
     shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.45,
+    shadowOpacity: 0.05,
     shadowRadius: 20,
-    elevation: 10,
+    elevation: 4,
   },
   cardHeader: {
     color: COLORS.text,

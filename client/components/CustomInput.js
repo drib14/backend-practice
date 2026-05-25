@@ -109,10 +109,10 @@ const styles = StyleSheet.create({
   },
   inputFocused: {
     borderColor: COLORS.primary,
-    backgroundColor: 'rgba(25, 25, 43, 0.85)',
+    backgroundColor: '#FFFFFF',
     shadowColor: COLORS.primary,
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.2,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
     shadowRadius: 8,
   },
   inputError: {

@@ -1,20 +1,20 @@
 export const COLORS = {
-  bg: '#08080C',
-  bgCard: 'rgba(21, 21, 33, 0.7)',
-  bgCardSolid: '#151521',
-  primary: '#6366F1', // Indigo Purple
-  primaryDark: '#4F46E5',
-  primaryGlow: 'rgba(99, 102, 241, 0.15)',
+  bg: '#FFF1F2', // Soft Cherry Blossom Pastel Pink
+  bgCard: 'rgba(255, 255, 255, 0.75)', // Glassmorphic Frosted Pearl White
+  bgCardSolid: '#FFFFFF',
+  primary: '#EC4899', // Vibrant Hot Pink / Magenta
+  primaryDark: '#DB2777',
+  primaryGlow: 'rgba(236, 72, 153, 0.15)',
   accent: '#EAB308', // Premium Amber Gold
   accentDark: '#CA8A04',
   success: '#10B981', // Emerald Green
-  error: '#EF4444', // Coral Red
-  text: '#F8FAFC', // Premium Off-White
-  textSecondary: '#94A3B8', // Slate Gray
-  textMuted: '#64748B',
-  border: 'rgba(255, 255, 255, 0.08)',
-  borderFocus: 'rgba(99, 102, 241, 0.45)',
-  placeholder: 'rgba(148, 163, 184, 0.35)',
+  error: '#F43F5E', // Rose Crimson
+  text: '#4C0519', // High-Contrast Deep Chocolate Rose (Perfect Accessibility)
+  textSecondary: '#9F1239', // Soft Rose Slate Gray
+  textMuted: '#BE123C',
+  border: 'rgba(236, 72, 153, 0.2)', // Pink outline border
+  borderFocus: 'rgba(236, 72, 153, 0.55)',
+  placeholder: 'rgba(236, 72, 153, 0.38)',
 };
 
 export const FONTS = {
@@ -27,17 +27,17 @@ export const FONTS = {
 
 export const SHADOWS = {
   card: {
-    shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.4,
-    shadowRadius: 15,
-    elevation: 8,
+    shadowColor: '#4C0519',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.08,
+    shadowRadius: 16,
+    elevation: 4,
   },
   glow: {
     shadowColor: COLORS.primary,
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 10,
-    elevation: 4,
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    elevation: 3,
   },
 };

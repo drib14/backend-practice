@@ -9,9 +9,9 @@ import {
   ScrollView,
   SafeAreaView,
   Alert,
+  Image,
 } from 'react-native';
-import { ShoppingBag } from 'lucide-react-native';
-import { COLORS, FONTS } from '../constants/theme';
+import { COLORS } from '../constants/theme';
 import { API_URL, APP_NAME } from '../config';
 import BackgroundGradient from '../components/BackgroundGradient';
 import CustomInput from '../components/CustomInput';
@@ -19,7 +19,7 @@ import CustomButton from '../components/CustomButton';
 import CustomCheckbox from '../components/CustomCheckbox';
 import TermsAndPrivacyModal from './TermsAndPrivacyModal';
 
-export default function RegisterScreen({ onNavigate }) {
+export default function RegisterScreen({ onNavigate, onLoginSuccess }) {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -102,14 +102,14 @@ export default function RegisterScreen({ onNavigate }) {
 
       const data = await response.json();
 
-      if (response.status === 201 || (response.status === 200 && data.status === 'unverified')) {
+      if (response.status === 201) {
         Alert.alert(
-          'Registration Initiated',
-          'A 6-digit verification code has been dispatched to your email address.',
+          'Registration Successful!',
+          'Your boutique account has been created successfully. Welcome to Keyshien\'s Accessories!',
           [
             {
-              text: 'Enter Code',
-              onPress: () => onNavigate('Verify', { email }),
+              text: 'Let\'s Shop!',
+              onPress: () => onLoginSuccess(data), // Auto-logs them in immediately!
             },
           ]
         );
@@ -120,7 +120,7 @@ export default function RegisterScreen({ onNavigate }) {
       console.error('Register Fetch Error:', err);
       Alert.alert(
         'Network Error',
-        'Could not reach the registration server. Please check your connection or server status.'
+        'Could not reach the registration server. Please check your connection status.'
       );
     } finally {
       setLoading(false);
@@ -145,10 +145,16 @@ export default function RegisterScreen({ onNavigate }) {
           >
             {/* Header Branding */}
             <View style={styles.header}>
-              <View style={styles.logoIcon}>
-                <ShoppingBag size={28} color="#FFFFFF" strokeWidth={2} />
+              <View style={styles.logoIconFrame}>
+                <Image
+                  source={require('../assets/icon.png')}
+                  style={styles.logoIconImage}
+                />
               </View>
-              <Text style={styles.title}>{APP_NAME}</Text>
+              {/* Bold Keyshien Title */}
+              <Text style={styles.title}>
+                <Text style={styles.extraBoldText}>Keyshien's</Text>{'\n'}Accessories
+              </Text>
               <Text style={styles.subtitle}>CREATE PREMIUM ACCOUNT</Text>
             </View>
 
@@ -191,7 +197,7 @@ export default function RegisterScreen({ onNavigate }) {
                   setPassword(text);
                   if (errors.password) setErrors({ ...errors, password: null });
                 }}
-                placeholder="Enter new password (min. 6 chars)"
+                placeholder="Enter password (min. 6 chars)"
                 secureTextEntry
                 error={errors.password}
               />
@@ -278,33 +284,46 @@ const styles = StyleSheet.create({
   },
   header: {
     alignItems: 'center',
-    marginBottom: 24,
+    marginBottom: 20,
   },
-  logoIcon: {
-    width: 60,
-    height: 60,
-    borderRadius: 18,
-    backgroundColor: COLORS.primary,
+  logoIconFrame: {
+    width: 90,
+    height: 90,
+    borderRadius: 45,
+    borderWidth: 3,
+    borderColor: '#FFFFFF',
+    backgroundColor: '#FFFFFF',
+    overflow: 'hidden',
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 12,
     shadowColor: COLORS.primary,
     shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.35,
+    shadowOpacity: 0.12,
     shadowRadius: 10,
-    elevation: 8,
+    elevation: 6,
+  },
+  logoIconImage: {
+    width: '100%',
+    height: '100%',
+    resizeMode: 'cover',
   },
   title: {
     color: COLORS.text,
     fontSize: 24,
+    fontWeight: '400',
+    textAlign: 'center',
+    letterSpacing: 0.5,
+  },
+  extraBoldText: {
     fontWeight: '800',
-    letterSpacing: 2,
+    color: COLORS.primary,
   },
   subtitle: {
-    color: COLORS.accent,
+    color: COLORS.textSecondary,
     fontSize: 10,
     fontWeight: '700',
-    letterSpacing: 3,
+    letterSpacing: 2,
     marginTop: 4,
   },
   card: {
@@ -313,11 +332,11 @@ const styles = StyleSheet.create({
     borderWidth: 1.5,
     borderColor: COLORS.border,
     padding: 24,
-    shadowColor: '#000000',
+    shadowColor: '#4C0519',
     shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.45,
+    shadowOpacity: 0.05,
     shadowRadius: 20,
-    elevation: 10,
+    elevation: 4,
   },
   cardHeader: {
     color: COLORS.text,

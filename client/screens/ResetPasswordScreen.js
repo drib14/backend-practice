@@ -9,9 +9,9 @@ import {
   ScrollView,
   SafeAreaView,
   Alert,
+  Image,
 } from 'react-native';
-import { LockKeyhole } from 'lucide-react-native';
-import { COLORS, FONTS } from '../constants/theme';
+import { COLORS } from '../constants/theme';
 import { API_URL } from '../config';
 import BackgroundGradient from '../components/BackgroundGradient';
 import CustomInput from '../components/CustomInput';
@@ -78,7 +78,7 @@ export default function ResetPasswordScreen({ onNavigate, routeParams }) {
 
       if (response.status === 200) {
         Alert.alert(
-          'Password Reset Complete',
+          'Password Reset Complete!',
           'Your credentials have been successfully updated. You may now log in with your new password.',
           [
             {
@@ -91,7 +91,7 @@ export default function ResetPasswordScreen({ onNavigate, routeParams }) {
         Alert.alert('Reset Failed', data.message || 'Invalid verification code or expired session.');
       }
     } catch (err) {
-      console.error('Reset Password Fetch Error:', err);
+      console.error('Reset Password Error:', err);
       Alert.alert('Network Error', 'Failed to connect to reset server. Please try again.');
     } finally {
       setLoading(false);
@@ -111,16 +111,22 @@ export default function ResetPasswordScreen({ onNavigate, routeParams }) {
           >
             {/* Header Branding */}
             <View style={styles.header}>
-              <View style={styles.logoIcon}>
-                <LockKeyhole size={32} color="#FFFFFF" strokeWidth={2} />
+              <View style={styles.logoIconFrame}>
+                <Image
+                  source={require('../assets/icon.png')}
+                  style={styles.logoIconImage}
+                />
               </View>
-              <Text style={styles.title}>RESET PASSWORD</Text>
+              {/* Bold Keyshien Title */}
+              <Text style={styles.title}>
+                <Text style={styles.extraBoldText}>Keyshien's</Text>{'\n'}Accessories
+              </Text>
               <Text style={styles.subtitle}>ESTABLISH NEW CREDENTIALS</Text>
             </View>
 
             {/* Reset Password Card */}
             <View style={styles.card}>
-              <Text style={styles.cardHeader}>Create New Password</Text>
+              <Text style={styles.cardHeader}>Verify Recovery OTP</Text>
               <Text style={styles.cardSubheader}>
                 Enter the 6-digit OTP code sent to: {'\n'}
                 <Text style={styles.emailHighlight}>{email}</Text>
@@ -204,34 +210,46 @@ const styles = StyleSheet.create({
   },
   header: {
     alignItems: 'center',
-    marginBottom: 24,
+    marginBottom: 20,
   },
-  logoIcon: {
-    width: 68,
-    height: 68,
-    borderRadius: 20,
-    backgroundColor: COLORS.primary,
+  logoIconFrame: {
+    width: 90,
+    height: 90,
+    borderRadius: 45,
+    borderWidth: 3,
+    borderColor: '#FFFFFF',
+    backgroundColor: '#FFFFFF',
+    overflow: 'hidden',
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 16,
+    marginBottom: 12,
     shadowColor: COLORS.primary,
     shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.35,
-    shadowRadius: 12,
-    elevation: 8,
+    shadowOpacity: 0.12,
+    shadowRadius: 10,
+    elevation: 6,
+  },
+  logoIconImage: {
+    width: '100%',
+    height: '100%',
+    resizeMode: 'cover',
   },
   title: {
     color: COLORS.text,
     fontSize: 24,
-    fontWeight: '800',
-    letterSpacing: 2,
+    fontWeight: '400',
     textAlign: 'center',
+    letterSpacing: 0.5,
+  },
+  extraBoldText: {
+    fontWeight: '800',
+    color: COLORS.primary,
   },
   subtitle: {
-    color: COLORS.accent,
+    color: COLORS.textSecondary,
     fontSize: 10,
     fontWeight: '700',
-    letterSpacing: 3,
+    letterSpacing: 2,
     marginTop: 4,
   },
   card: {
@@ -240,11 +258,11 @@ const styles = StyleSheet.create({
     borderWidth: 1.5,
     borderColor: COLORS.border,
     padding: 24,
-    shadowColor: '#000000',
+    shadowColor: '#4C0519',
     shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.45,
+    shadowOpacity: 0.05,
     shadowRadius: 20,
-    elevation: 10,
+    elevation: 4,
     alignItems: 'center',
   },
   cardHeader: {
