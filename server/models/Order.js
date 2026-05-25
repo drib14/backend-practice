@@ -50,11 +50,9 @@ const OrderSchema = new mongoose.Schema({
   paymentDetails: {
     cardholderName: {
       type: String,
-      required: true,
     },
     cardNumberMasked: {
       type: String,
-      required: true,
     },
     gateway: {
       type: String,

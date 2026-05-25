@@ -38,28 +38,28 @@ const PREMIUM_PRODUCTS = [
     id: '1',
     name: 'Keyshien Retro Heart Glasses',
     category: 'Eyewear',
-    price: 28.00,
+    price: 1250.00,
     image: 'https://images.unsplash.com/photo-1511556532299-8f662fc26c06?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3', 
   },
   {
     id: '2',
     name: 'Crystal Bow Choker',
     category: 'Necklaces',
-    price: 45.00,
+    price: 1980.00,
     image: 'https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3', 
   },
   {
     id: '3',
     name: 'Pearl Star Stud Earrings',
     category: 'Earrings',
-    price: 24.00,
+    price: 950.00,
     image: 'https://images.unsplash.com/photo-1535632066927-ab7c9ab60908?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3',
   },
   {
     id: '4',
     name: 'Pink Velvet Travel Organizer',
     category: 'Storage',
-    price: 59.00,
+    price: 2450.00,
     image: 'https://images.unsplash.com/photo-1601121141461-9d6647bca1ed?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3',
   },
 ];
@@ -481,7 +481,7 @@ export default function App() {
                 {item.name}
               </Text>
               <View style={styles.priceRow}>
-                <Text style={styles.productPrice}>${item.price.toFixed(2)}</Text>
+                <Text style={styles.productPrice}>₱{item.price.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</Text>
                 <TouchableOpacity onPress={() => addToCart(item)} activeOpacity={0.6} style={styles.addButton}>
                   <ShoppingBag size={14} color="#FFFFFF" strokeWidth={2.5} />
                 </TouchableOpacity>
@@ -515,7 +515,7 @@ export default function App() {
             <View style={styles.cartItemDetails}>
               <Text style={styles.cartItemName}>{item.name}</Text>
               <Text style={styles.cartItemCategory}>{item.category}</Text>
-              <Text style={styles.cartItemPrice}>${item.price.toFixed(2)}</Text>
+              <Text style={styles.cartItemPrice}>₱{item.price.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</Text>
             </View>
             <View style={styles.quantityControls}>
               <TouchableOpacity onPress={() => updateCartQuantity(item.id, -1)} activeOpacity={0.6} style={styles.qtyBtn}>
@@ -531,18 +531,18 @@ export default function App() {
 
         {/* Pricing Summary */}
         <View style={styles.summaryCard}>
-          <Text style={styles.summaryTitle}>ORDER SUMMARY</Text>
+          <Text style={summaryTitleStyle}>ORDER SUMMARY</Text>
           <View style={styles.summaryRow}>
             <Text style={styles.summaryLabel}>Subtotal</Text>
-            <Text style={styles.summaryVal}>${getCartTotal().toFixed(2)}</Text>
+            <Text style={styles.summaryVal}>₱{getCartTotal().toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</Text>
           </View>
           <View style={styles.summaryRow}>
             <Text style={styles.summaryLabel}>Boutique Logistics</Text>
-            <Text style={styles.summaryVal}>$5.00</Text>
+            <Text style={styles.summaryVal}>₱150.00</Text>
           </View>
           <View style={[styles.summaryRow, styles.totalRow]}>
             <Text style={styles.totalLabel}>Total</Text>
-            <Text style={styles.totalVal}>${(getCartTotal() + 5.00).toFixed(2)}</Text>
+            <Text style={styles.totalVal}>₱{(getCartTotal() + 150.00).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</Text>
           </View>
           
           <CustomButton
@@ -870,6 +870,18 @@ export default function App() {
 
   const appContent = (
     <View style={styles.container}>
+      {Platform.OS === 'web' && (
+        <style dangerouslySetInnerHTML={{__html: `
+          html, body, #root {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: #FFF1F2;
+          }
+        `}} />
+      )}
       <StatusBar barStyle="dark-content" backgroundColor={COLORS.bg} />
       {renderScreen()}
     </View>

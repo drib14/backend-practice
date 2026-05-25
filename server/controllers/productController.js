@@ -4,25 +4,25 @@ const DEFAULT_PRODUCTS = [
   {
     name: 'Keyshien Retro Heart Glasses',
     category: 'Eyewear',
-    price: 28.00,
+    price: 1250.00,
     image: 'https://images.unsplash.com/photo-1511556532299-8f662fc26c06?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3',
   },
   {
     name: 'Crystal Bow Choker',
     category: 'Necklaces',
-    price: 45.00,
+    price: 1980.00,
     image: 'https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3',
   },
   {
     name: 'Pearl Star Stud Earrings',
     category: 'Earrings',
-    price: 24.00,
+    price: 950.00,
     image: 'https://images.unsplash.com/photo-1535632066927-ab7c9ab60908?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3',
   },
   {
     name: 'Pink Velvet Travel Organizer',
     category: 'Storage',
-    price: 59.00,
+    price: 2450.00,
     image: 'https://images.unsplash.com/photo-1601121141461-9d6647bca1ed?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3',
   },
 ];
