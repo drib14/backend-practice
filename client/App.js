@@ -14,6 +14,7 @@ import {
   TextInput,
   ScrollView,
   Modal,
+  Platform,
 } from 'react-native';
 import { LogOut, ShoppingBag, CreditCard, Shield, Sparkles, ShoppingCart, User, Trash2, CheckCircle, ArrowRight } from 'lucide-react-native';
 import { COLORS } from './constants/theme';
