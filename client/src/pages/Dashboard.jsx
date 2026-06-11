@@ -40,7 +40,7 @@ const Dashboard = () => {
                                 <ListItem key={idx} divider>
                                     <ListItemText
                                         primary={l.lessonId ? l.lessonId.title : 'Lesson'}
-                                        secondary={`Completed: \${new Date(l.completedAt).toLocaleDateString()}`}
+                                        secondary={`Completed: ${new Date(l.completedAt).toLocaleDateString()}`}
                                     />
                                 </ListItem>
                             ))}
@@ -58,7 +58,7 @@ const Dashboard = () => {
                                 <ListItem key={idx} divider>
                                     <ListItemText
                                         primary={q.quizId ? q.quizId.title : 'Quiz'}
-                                        secondary={`Score: \${q.score}% | \${new Date(q.completedAt).toLocaleDateString()}`}
+                                        secondary={`Score: ${q.score}% | ${new Date(q.completedAt).toLocaleDateString()}`}
                                     />
                                 </ListItem>
                             ))}

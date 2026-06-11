@@ -1,14 +1,21 @@
-import React, { useState, useContext } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import { Box, Button, Typography, Paper, CircularProgress, Tabs, Tab } from '@mui/material';
 import Editor from '@monaco-editor/react';
 import { AuthContext } from '../context/AuthContext';
 export default function CodePlayground({ defaultLanguage = 'html', defaultCode = '' }) {
     const { api } = useContext(AuthContext);
     const [code, setCode] = useState(defaultCode);
-    const [language] = useState(defaultLanguage);
+    const [language, setLanguage] = useState(defaultLanguage);
     const [output, setOutput] = useState('');
     const [isRunning, setIsRunning] = useState(false);
     const [activeTab, setActiveTab] = useState(defaultLanguage === 'html' ? 1 : 0);
+
+    useEffect(() => {
+        setCode(defaultCode);
+        setLanguage(defaultLanguage);
+        setActiveTab(defaultLanguage === 'html' ? 1 : 0);
+        setOutput('');
+    }, [defaultCode, defaultLanguage]);
 
     const runBackend = async () => {
         setIsRunning(true); setActiveTab(0);

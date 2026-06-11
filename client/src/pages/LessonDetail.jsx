@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { Container, Typography, Box, Button, Paper } from '@mui/material';
+import { Container, Typography, Box, Button, Paper, Grid, Divider } from '@mui/material';
 import ReactMarkdown from 'react-markdown';
 import { AuthContext } from '../context/AuthContext';
 import CodePlayground from '../components/CodePlayground';
@@ -26,21 +26,49 @@ const LessonDetail = () => {
         setCompleted(true);
     };
 
-    if (!lesson) return <Typography>Loading...</Typography>;
+    if (!lesson) return <Typography sx={{ mt: 5, ml: 5 }}>Loading...</Typography>;
 
     return (
-        <Container sx={{ mt: 5 }}>
-            <Button component={Link} to="/lessons" sx={{ mb: 2 }}>Back</Button>
-            <Typography variant="h3" color="primary">{lesson.title}</Typography>
-            <Paper sx={{ p: 4, mt: 3, mb: 3 }}>
-                <ReactMarkdown>{lesson.content}</ReactMarkdown>
-                <Button variant="contained" color={completed ? "success" : "primary"} onClick={markComplete} sx={{ mt: 3 }}>
-                    {completed ? "Completed" : "Mark as Complete"}
-                </Button>
-            </Paper>
-            <Typography variant="h5" color="secondary" gutterBottom>Interactive Playground</Typography>
-            <CodePlayground defaultLanguage={lesson.language} defaultCode={lesson.codeSnippet} />
-        </Container>
+        <Box sx={{ p: 2 }}>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+                <Typography variant="h4" color="primary" fontWeight="bold">{lesson.title}</Typography>
+                <Button component={Link} to="/lessons" variant="outlined" color="primary">Back to Courses</Button>
+            </Box>
+
+            <Grid container spacing={3}>
+                <Grid item xs={12} lg={5}>
+                    <Paper sx={{ p: 4, height: 'calc(100vh - 180px)', overflow: 'auto', backgroundColor: 'background.paper', borderRadius: 2 }}>
+                        <Box sx={{ '& h1': { color: '#10b981', mb: 3, fontSize: '2rem' }, '& p': { fontSize: '1.1rem', lineHeight: 1.6 } }}>
+                            <ReactMarkdown>{lesson.content}</ReactMarkdown>
+                        </Box>
+
+                        <Divider sx={{ my: 4 }} />
+
+                        <Box sx={{ p: 3, backgroundColor: 'rgba(16, 185, 129, 0.1)', borderLeft: '4px solid #10b981', borderRadius: 1 }}>
+                            <Typography variant="h6" gutterBottom color="primary">Exercise</Typography>
+                            <Typography variant="body1" paragraph>Try modifying the code in the editor to see how it works!</Typography>
+                            <Button variant="contained" color={completed ? "success" : "primary"} onClick={markComplete}>
+                                {completed ? "Completed!" : "Mark as Complete"}
+                            </Button>
+                        </Box>
+                    </Paper>
+                </Grid>
+
+                <Grid item xs={12} lg={7}>
+                    <Paper sx={{ height: 'calc(100vh - 180px)', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+                        <Box sx={{ p: 2, backgroundColor: 'rgba(0,0,0,0.2)', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
+                            <Typography variant="h6" color="secondary" sx={{ display: 'flex', alignItems: 'center' }}>
+                                Try it Yourself
+                            </Typography>
+                        </Box>
+                        <Box sx={{ flexGrow: 1, '& > div': { height: '100% !important', borderRadius: '0 0 8px 8px' } }}>
+                            <CodePlayground defaultLanguage={lesson.language} defaultCode={lesson.codeSnippet} />
+                        </Box>
+                    </Paper>
+                </Grid>
+            </Grid>
+        </Box>
     );
 };
+
 export default LessonDetail;
